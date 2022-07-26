@@ -31,11 +31,15 @@ ssdp-fake.py --help
 
 ssdp-fake.py --listen-only
 
-ssdp-fake.py --all [--interval=N] server.ip.address
+ssdp-fake.py -t [--interval=N] [--sourceip=IP] server.ip.address
 ```
 
-`--all` is recommended. Leaving it out is supposed to confine the announcements to the loopback
-interface so only clients on the same host will see the server, but it doesn't work properly.
+`-t, --localhost` is is supposed to confine the announcements to the
+loopback interface so only clients on the same host will see the
+server, but it doesn't work properly.
+
+`--sourceip` it defines the source IP where SSDP notifications will be sent.
+Please note that IP must be assigned to an network interface.
 
 ## TODO
 
