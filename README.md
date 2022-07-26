@@ -18,7 +18,7 @@ server directly.
 
 ## Versions
 
-There are only python version.
+There are only python version, it was updated to work with Python3.
 
 This repo is a fork where the perl version was removed, if you need
 the perl one, please go to https://github.com/GrahamCobb/ssdp-fake

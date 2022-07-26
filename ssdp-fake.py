@@ -1,8 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright (C) 2014 Graham R. Cobb
 # Released under GPL V2 -- see LICENSE
 # Python multicast code taken from Stack Overflow (https://stackoverflow.com/questions/603852/multicast-in-python/1794373#1794373) by tolomea (https://stackoverflow.com/users/10471/tolomea) under CC BY-SA 3.0
 # Other example code taken from Stack Overflow by Toddeman (under CC BY-SA 3.0), however it does not seem to be available any longer
+
+# Refactor to python3 by Rafael Alpízar
 
 import socket
 import struct
@@ -74,8 +76,8 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: upnp:rootdevice' + CRLF \
@@ -86,8 +88,8 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: uuid:' + UUID + CRLF \
@@ -98,8 +100,8 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print ("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:ContentDirectory:1' + CRLF \
@@ -110,8 +112,8 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:ConnectionManager:1' + CRLF \
@@ -122,8 +124,8 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:X_MS_MediaReceiverRegistrar:1' + CRLF \
@@ -134,10 +136,10 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
   else:
-    print "Skipping notification"
+    print("Skipping notification")
 
 def respond(addr, port):
   if (URL != '' and UUID != '' and not LISTEN):
@@ -153,8 +155,8 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: upnp:rootdevice' + CRLF \
@@ -165,8 +167,8 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: uuid:' + UUID + CRLF \
@@ -177,8 +179,8 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:ContentDirectory:1' + CRLF \
@@ -189,8 +191,8 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:ConnectionManager:1' + CRLF \
@@ -201,8 +203,8 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:X_MS_MediaReceiverRegistrar:1' + CRLF \
@@ -213,10 +215,10 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print "Sending ("+addr+":"+str(port)+"): \n" + msg
-    osock.sendto(msg, (addr, port))
+    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
+    osock.sendto(msg.encode(), (addr, port))
   else:
-    print "Skipping response"
+    print("Skipping response")
 
 def server():
   if not LISTEN:
@@ -227,12 +229,12 @@ def server():
 	+ 'MX: 3' + CRLF \
 	+ 'User-Agent:ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ CRLF) % (SERVER, DLNA_PORT)
-    print "Sending to server: \n" + msg
-    osock.sendto(msg, (SERVER, DLNA_PORT))
+    print("Sending to server: \n" + msg)
+    osock.sendto(msg.encode(), (SERVER, DLNA_PORT))
 
-def parse_msg(msg):
+def parse_msg(msg_binary):
   global URL, UUID, last_update, next_notification
-
+  msg = msg_binary.decode()
   if (re.match('^HTTP/1.1\s*200\s*OK', msg, re.IGNORECASE)):
     # Response to our M-SEARCH
     match = re.search(r'^LOCATION:\s*(.*)\r$', msg, re.IGNORECASE | re.MULTILINE)
@@ -241,13 +243,13 @@ def parse_msg(msg):
     match = re.search(r'^USN:\s*uuid:([^:]+):', msg, re.IGNORECASE | re.MULTILINE)
     if match:
       UUID = match.group(1)
-    print 'URL=%s, UUID=%s.' % (URL, UUID)
+    print('URL=%s, UUID=%s.' % (URL, UUID))
     last_update = time.time()
     # Bring the notifcation forward
     next_notification = time.time() + 1
     
 def is_search(msg):
-  return re.match('^M-SEARCH', msg, re.IGNORECASE)
+  return re.match('^M-SEARCH', msg.decode(), re.IGNORECASE)
 
 # Get info from server
 last_update = 0
@@ -267,7 +269,7 @@ while True:
 
   if (isock in readyin):
     (msg, (addr, port)) = isock.recvfrom(4096)
-    print "Received unicast from %s:%d\n%s" % (addr, port, msg)
+    print("Received unicast from %s:%d\n%s" % (addr, port, msg))
     if (is_search(msg)):
       respond(addr, port)
     else:
@@ -276,9 +278,9 @@ while True:
   if (imsock in readyin):
     (msg, (addr, port)) = imsock.recvfrom(4096)
     if (port == oport):
-      print "Ignored multicast from ourselves (%s:%d)" % (addr, port)
+      print("Ignored multicast from ourselves (%s:%d)" % (addr, port))
     else:
-      print "Received multicast from %s:%d\n%s" % (addr, port, msg)
+      print("Received multicast from %s:%d\n%s" % (addr, port, msg))
       if (is_search(msg)):
         respond(addr, port)
 
