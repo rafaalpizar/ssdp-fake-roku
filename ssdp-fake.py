@@ -11,9 +11,10 @@ import struct
 import time
 import select
 import re
+import logging
 from optparse import OptionParser
 
-VERSION='0.3'
+VERSION='0.5'
 
 DLNA_GRP = '239.255.255.250'
 DLNA_PORT = 1900
@@ -27,14 +28,20 @@ UUID=''
 URL=''
 INTERVAL = 180
 
+
+logging.basicConfig(level=logging.DEBUG)
+
+
 parser = OptionParser(usage="usage: %prog [options] server\n       %prog --listen-only",
 	epilog="Server can be specified as hostname or IP address and should be omitted if --listen-only is used",
 	version="%prog "+VERSION)
-parser.add_option("-a", "--all",
-                  action="store_true", dest="allif", default=False,
-                  help="send announcements to all interfaces, not just the loopback interface")
+parser.add_option("-t", "--localhost",
+                  action="store_true", dest="localh", default=False,
+                  help="send announcements only on loopback interface")
 parser.add_option("-i", "--interval", type="int", dest="interval", default=INTERVAL,
 		  help="seconds between notification updates (default %default)")
+parser.add_option("-s", "--sourceip", type="str", dest="sourceip", default="",
+		  help="use this source IP to send SSDP announcements (if not set all interfaces will be used")
 parser.add_option("-l", "--listen-only",
                   action="store_true", dest="listen", default=False,
                   help="just listen and display messages seen, do not contact a server or send announcements")
@@ -42,25 +49,44 @@ parser.add_option("-l", "--listen-only",
 LISTEN=options.listen
 if len(args) == 0 and not LISTEN:
   parser.error("server must be specified (hostname or IP address)")
-if len(args) > 1:
+if len(args) > 2:
   parser.error("incorrect number of arguments")
 if not LISTEN:
   SERVER=args[0]
 INTERVAL=options.interval
 
+try:
+  # Roku device socket to query SSDP
+  devicesock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+  devicesock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+except OSError as e:
+  print(f'Failed to create socket to device {SERVER}, detail: {e}')
+  exit(1)
+
 osock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 osock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
 osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-if not options.allif:
+if options.localh:
   mreq = struct.pack("4sl", socket.inet_aton(MCAST_IF), socket.INADDR_ANY)
   osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, mreq)
+
+if options.sourceip:
+  logging.info('Binding output sock to source IP: %s' % options.sourceip)
+  # TODO: refactor to allow multiple soure ip bind, create a generic send function
+  osock.bind((options.sourceip, 0))
 
 imsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 imsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 imsock.bind(('', DLNA_PORT))
 mreq = struct.pack("4sl", socket.inet_aton(DLNA_GRP), socket.INADDR_ANY)
 imsock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+
+def sendudp(xsocket, ip, port, msg):
+  print("Sending ("+ip+":"+str(port)+"): \n" + msg)
+  xsocket.sendto(msg.encode(), (ip, port))
+
 
 def notify(addr, port):
   if (URL != '' and UUID != '' and not LISTEN):
@@ -76,8 +102,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: upnp:rootdevice' + CRLF \
@@ -88,8 +113,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: uuid:' + UUID + CRLF \
@@ -100,8 +124,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print ("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:ContentDirectory:1' + CRLF \
@@ -112,8 +135,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:ConnectionManager:1' + CRLF \
@@ -124,8 +146,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'NOTIFY * HTTP/1.1' + CRLF \
 	+ 'NT: urn:schemas-upnp-org:service:X_MS_MediaReceiverRegistrar:1' + CRLF \
@@ -136,8 +157,7 @@ def notify(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
   else:
     print("Skipping notification")
 
@@ -155,8 +175,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: upnp:rootdevice' + CRLF \
@@ -167,8 +186,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: uuid:' + UUID + CRLF \
@@ -179,8 +197,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:ContentDirectory:1' + CRLF \
@@ -191,8 +208,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:ConnectionManager:1' + CRLF \
@@ -203,8 +219,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
 
     msg = 'HTTP/1.1 200 OK' + CRLF \
 	+ 'ST: urn:schemas-upnp-org:service:X_MS_MediaReceiverRegistrar:1' + CRLF \
@@ -215,8 +230,7 @@ def respond(addr, port):
 	+ 'SERVER: ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ 'CACHE-CONTROL: max-age=' + str(INTERVAL * 10) + CRLF \
 	+ CRLF
-    print("Sending ("+addr+":"+str(port)+"): \n" + msg)
-    osock.sendto(msg.encode(), (addr, port))
+    sendudp(osock, addr, port, msg)
   else:
     print("Skipping response")
 
@@ -229,8 +243,8 @@ def server():
 	+ 'MX: 3' + CRLF \
 	+ 'User-Agent:ssdp-fake/0 DLNADOC/1.50 UPnP/1.0 ssdp-fake/0' + CRLF \
 	+ CRLF) % (SERVER, DLNA_PORT)
-    print("Sending to server: \n" + msg)
-    osock.sendto(msg.encode(), (SERVER, DLNA_PORT))
+    logging.info("Sending SSDP search to upstream server")
+    sendudp(devicesock, SERVER, DLNA_PORT, msg)
 
 def parse_msg(msg_binary):
   global URL, UUID, last_update, next_notification
@@ -258,13 +272,15 @@ server()
 next_notification = time.time() + INTERVAL
 
 # Note: the port is not set up until at least one send has happened
-(notused, oport) = osock.getsockname()
+#(notused, oport) = osock.getsockname()
+(notused, oport) = devicesock.getsockname()
 
 isock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 isock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 isock.bind(('', oport))
 
 while True:
+  logging.debug('Select timeout: %d' % max(next_notification - time.time(),0))
   (readyin, notused, notused) = select.select([isock, imsock], [], [], max(next_notification - time.time(),0))
 
   if (isock in readyin):
@@ -284,12 +300,14 @@ while True:
       if (is_search(msg)):
         respond(addr, port)
 
+  logging.debug('Current time %s, next notif %s' % (time.time(), next_notification))
   if (time.time() >= next_notification):
     next_notification = time.time() + INTERVAL
 
     # Has the server info been updated recently?
     if (time.time() - last_update <= INTERVAL):
       # Yes, just do the notification
+      logging.debug('Seding SSDP Notify')
       notify(DLNA_GRP, DLNA_PORT)
     else:
       # Get new info from the server
