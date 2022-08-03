@@ -12,7 +12,7 @@ import time
 import select
 import re
 import logging
-from optparse import OptionParser
+import argparse
 
 VERSION='0.5'
 
@@ -32,28 +32,27 @@ INTERVAL = 180
 logging.basicConfig(level=logging.DEBUG)
 
 
-parser = OptionParser(usage="usage: %prog [options] server\n       %prog --listen-only",
-	epilog="Server can be specified as hostname or IP address and should be omitted if --listen-only is used",
-	version="%prog "+VERSION)
-parser.add_option("-t", "--localhost",
-                  action="store_true", dest="localh", default=False,
-                  help="send announcements only on loopback interface")
-parser.add_option("-i", "--interval", type="int", dest="interval", default=INTERVAL,
-		  help="seconds between notification updates (default %default)")
-parser.add_option("-s", "--sourceip", type="str", dest="sourceip", default="",
-		  help="use this source IP to send SSDP announcements (if not set all interfaces will be used")
-parser.add_option("-l", "--listen-only",
-                  action="store_true", dest="listen", default=False,
-                  help="just listen and display messages seen, do not contact a server or send announcements")
-(options, args) = parser.parse_args()
-LISTEN=options.listen
-if len(args) == 0 and not LISTEN:
-  parser.error("server must be specified (hostname or IP address)")
-if len(args) > 2:
-  parser.error("incorrect number of arguments")
-if not LISTEN:
-  SERVER=args[0]
-INTERVAL=options.interval
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 description='Send SSDP messages from Roku device on different LANs.',
+                                 epilog='''
+
+Example:
+# Interval 5s, source ip to send notify 192.168.9.1, roku ip 192.168.10.39
+  %(prog)s -i 5 -s 192.168.9.1 192.168.10.39
+''')
+parser.add_argument('-i', '--interval', type=int, default=INTERVAL, dest='interval',
+                    help='seconds between notification updates (default: %(default)s)')
+parser.add_argument('-s', '--sourceip', type=str, dest='sourceip', metavar='IP',
+                    help='use specific IPs to send SSDP notify. IP must be assigned to local interfaces')
+parser.add_argument('-l', '--listen-only', dest='listen', action='store_true',
+                    help='just listen and display messages seen, do not contact a server or send announcements')
+parser.add_argument('server', type=str, metavar='Roku-IP-Address',
+                    help='Roku IP address')
+
+options = parser.parse_args()
+SERVER = options.server
+INTERVAL = options.interval
+LISTEN = options.listen
 
 try:
   # Roku device socket to query SSDP
@@ -67,9 +66,6 @@ osock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 osock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
 osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-if options.localh:
-  mreq = struct.pack("4sl", socket.inet_aton(MCAST_IF), socket.INADDR_ANY)
-  osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, mreq)
 
 if options.sourceip:
   logging.info('Binding output sock to source IP: %s' % options.sourceip)
@@ -312,5 +308,3 @@ while True:
     else:
       # Get new info from the server
       server()
-
-
