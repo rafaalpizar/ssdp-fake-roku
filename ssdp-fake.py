@@ -6,6 +6,11 @@
 
 # Refactor to python3 by Rafael Alpízar
 
+
+# TODO: fix issue with receive dicovery requests
+# TODO: test script without source ip
+# TODO: update readme file
+
 import socket
 import struct
 import time
