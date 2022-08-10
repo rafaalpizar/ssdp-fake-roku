@@ -72,6 +72,7 @@ except OSError as e:
   logging.error(f'Failed to create socket to device {SERVER}, detail: {e}')
   exit(1)
 
+# socket to send multicast
 osock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 osock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 osock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
@@ -82,12 +83,13 @@ if options.sourceip:
   # TODO: refactor to allow multiple soure ip bind, create a generic send function
   osock.bind((options.sourceip, 0))
 
+# socket to receive multicast
 imsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 imsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+logging.info('Binding multicast imput sock to port: %d' % DLNA_PORT)
 imsock.bind(('', DLNA_PORT))
 mreq = struct.pack("4sl", socket.inet_aton(DLNA_GRP), socket.INADDR_ANY)
 imsock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
 
 def sendudp(xsocket, ip, port, msg):
   logging.debug("Sending ("+ip+":"+str(port)+"): \n" + msg)
@@ -261,6 +263,7 @@ next_notification = time.time() + INTERVAL
 
 isock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 isock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+logging.info('Binding isock to port: %d' % oport)
 isock.bind(('', oport))
 
 # Init exit key
