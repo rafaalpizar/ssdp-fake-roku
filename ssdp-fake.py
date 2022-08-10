@@ -18,6 +18,7 @@ import select
 import re
 import logging
 import argparse
+import sys
 
 VERSION='0.5'
 
@@ -262,9 +263,15 @@ isock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 isock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 isock.bind(('', oport))
 
-while True:
+# Init exit key
+key = ""
+
+
+logging.debug('While loop start, press q and then ENTER to exit.')
+# loop until exit key is pressed
+while key != 'q':
   logging.debug('Select timeout: %d' % max(next_notification - time.time(),0))
-  (readyin, notused, notused) = select.select([isock, imsock], [], [], max(next_notification - time.time(),0))
+  (readyin, notused, notused) = select.select([isock, imsock, sys.stdin], [], [], max(next_notification - time.time(),0))
 
   if (isock in readyin):
     (msg, (addr, port)) = isock.recvfrom(4096)
@@ -283,6 +290,10 @@ while True:
       if (is_search(msg)):
         respond(addr, port)
 
+  if (sys.stdin in readyin):
+    # read key
+    key = sys.stdin.read(1)
+
   logging.debug('Current time %s, next notif %s' % (time.time(), next_notification))
   if (time.time() >= next_notification):
     next_notification = time.time() + INTERVAL
@@ -295,3 +306,8 @@ while True:
     else:
       # Get new info from the server
       server()
+
+logging.debug('Exit from while loop')
+isock.close()
+imsock.close()
+osock.close()

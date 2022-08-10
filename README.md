@@ -29,17 +29,21 @@ the perl one, please go to https://github.com/GrahamCobb/ssdp-fake
 ``` python
 ssdp-fake.py --help
 
-ssdp-fake.py --listen-only
+ssdp-fake.py [-d] --listen-only
 
-ssdp-fake.py -t [--interval=N] [--sourceip=IP] server.ip.address
+ssdp-fake.py [-d] [--interval N] [--sourceip IP] server.ip.address
 ```
 
-`-t, --localhost` is is supposed to confine the announcements to the
-loopback interface so only clients on the same host will see the
-server, but it doesn't work properly.
+`-l, --listen-only` just listen and display messages seen, do not contact a server or send announcements
+
+`-i INTERVAL, --interval INTERVAL` seconds between notification updates (default: 180)
 
 `--sourceip` it defines the source IP where SSDP notifications will be sent.
 Please note that IP must be assigned to an network interface.
+
+`-d, --debug` enable verbose output to console
+
+
 
 ## TODO
 
