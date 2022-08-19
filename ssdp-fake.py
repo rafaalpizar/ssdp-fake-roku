@@ -95,7 +95,6 @@ def sendudp(xsocket, ip, port, msg):
   logging.debug("Sending ("+ip+":"+str(port)+"): \n" + msg)
   xsocket.sendto(msg.encode(), (ip, port))
 
-
 def notify(addr, port):
   if (URL != '' and UUID != '' and not LISTEN):
     # Note: responses should have ST:, notifies should have NT:
@@ -270,7 +269,7 @@ isock.bind(('', oport))
 key = ""
 
 
-logging.debug('While loop start, press q and then ENTER to exit.')
+logging.info('Process started, press q and then ENTER to exit.')
 # loop until exit key is pressed
 while key != 'q':
   logging.debug('Select timeout: %d' % max(next_notification - time.time(),0))
